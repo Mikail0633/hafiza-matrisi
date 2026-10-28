@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Hafıza Matrisi · GemmGenc</title>
+<meta name="description" content="Yanan kareleri aklında tut, aynısını işaretle. GemmGenc'in küçük tarayıcı oyunu.">
+<meta property="og:title" content="Hafıza Matrisi · GemmGenc">
+<meta property="og:description" content="Yanan kareleri aklında tut. Kaçıncı seviyeye çıkabilirsin?">
+<meta name="theme-color" content="#121016">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --zemin: #121016; --yazi: #f3f1f7; --soluk: #a7a2b3; --mor: #a78bfa; --mor-koyu: #8b5cf6; --pembe: #ec4899; }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    min-height: 100vh; background: var(--zemin); color: var(--yazi);
+    font: 16px/1.5 Inter, system-ui, sans-serif;
+    display: flex; flex-direction: column; align-items: center; padding: 12px 16px 24px;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  }
+  header { width: 100%; max-width: 440px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  header a { color: var(--soluk); text-decoration: none; font-size: 14px; }
+  header a:hover { color: var(--mor); }
+  .panel { width: 100%; max-width: 440px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .kutu { background: rgb(255 255 255 / .04); border: 1px solid rgb(255 255 255 / .08); border-radius: 14px; padding: 8px 12px; text-align: center; }
+  .kutu small { display: block; color: var(--soluk); font-size: 12px; }
+  .kutu b { font: 700 22px Sora, sans-serif; }
+  #canlar { font-size: 17px; white-space: nowrap; letter-spacing: 0; line-height: 33px; }
+  .durum { height: 26px; margin-bottom: 10px; color: var(--mor); font-weight: 600; font-size: 15px; }
+
+  .alan { position: relative; width: 100%; max-width: 440px; }
+  .izgara {
+    display: grid; gap: 8px; padding: 12px; border-radius: 22px;
+    background: rgb(255 255 255 / .03); border: 1px solid rgb(167 139 250 / .2);
+    box-shadow: 0 0 60px -24px rgb(139 92 246 / .7);
+    transition: transform .4s ease;
+  }
+  .kare {
+    aspect-ratio: 1; border-radius: 12px; cursor: pointer;
+    background: #1b1822; border: 1px solid rgb(255 255 255 / .05);
+    transition: background .18s, box-shadow .18s, transform .12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .kare:active { transform: scale(.94); }
+  .kare.yanik { background: var(--mor); box-shadow: 0 0 22px rgb(167 139 250 / .8); }
+  .kare.dogru { background: var(--mor-koyu); box-shadow: 0 0 18px rgb(139 92 246 / .7); }
+  .kare.yanlis { background: var(--pembe); box-shadow: 0 0 22px rgb(236 72 153 / .8); animation: titre .3s; }
+  .kare.kacirildi { box-shadow: inset 0 0 0 2px var(--mor); }
+  @keyframes titre { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  .izgara.basari { transform: rotate(90deg); }
+
+  .ekran {
+    position: absolute; inset: 0; border-radius: 22px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 20px;
+    background: rgb(18 16 22 / .88); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); z-index: 10;
+  }
+  .ekran[hidden] { display: none; }
+  h1 { font: 700 36px/1.05 Sora, sans-serif; background: linear-gradient(100deg, #fff, #c4b5fd 60%, #f0abfc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ekran p { color: var(--soluk); max-width: 30ch; font-size: 15px; }
+  .buyuk { font: 700 56px/1 Sora, sans-serif; }
+  button { font: 600 16px Inter, sans-serif; color: #fff; cursor: pointer; background: var(--mor-koyu); border: 0; border-radius: 14px; padding: 14px 28px; box-shadow: 0 10px 30px -10px rgb(139 92 246 / .9); }
+  button:active { transform: scale(.97); }
+  .rekor { color: var(--pembe); font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <a href="https://mikail0633.github.io">← GemmGenc</a>
+  <span style="color:var(--soluk);font-size:14px">Rekor seviye <b id="rekor" style="color:var(--mor)">0</b></span>
+</header>
+
+<div class="panel">
+  <div class="kutu"><small>Seviye</small><b id="seviye">1</b></div>
+  <div class="kutu"><small>Skor</small><b id="skor">0</b></div>
+  <div class="kutu"><small>Can</small><b id="canlar">💜💜💜</b></div>
+</div>
+<div class="durum" id="durum"></div>
+
+<div class="alan">
+  <div class="izgara" id="izgara"></div>
+
+  <div class="ekran" id="giris">
+    <h1>Hafıza Matrisi</h1>
+    <p>Kareler bir anlığına yanacak. Hangilerinin yandığını aklında tut, sonra aynılarını işaretle.</p>
+    <p>Her seviyede daha çok kare yanar, ızgara büyür ve bazen döner. 3 canın var.</p>
+    <button id="basla">Başla</button>
+  </div>
+
+  <div class="ekran" id="bitti" hidden>
+    <p>Ulaştığın seviye</p>
+    <div class="buyuk" id="sonSeviye">1</div>
+    <p id="sonSkor"></p>
+    <p class="rekor" id="yeniRekor" hidden>🏆 Yeni rekor!</p>
+    <button id="tekrar">Tekrar oyna</button>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const izgara = $('izgara');
+
+let ses;
+function ton(f, sure = .12, tur = 'sine', hacim = .06, kayma = 0) {
+  try {
+    ses = ses || new (window.AudioContext || window.webkitAudioContext)();
+    const t = ses.currentTime, o = ses.createOscillator(), g = ses.createGain();
+    o.type = tur; o.frequency.setValueAtTime(f, t);
+    if (kayma) o.frequency.exponentialRampToValueAtTime(f * kayma, t + sure);
+    g.gain.setValueAtTime(hacim, t); g.gain.exponentialRampToValueAtTime(.0001, t + sure);
+    o.connect(g).connect(ses.destination); o.start(t); o.stop(t + sure + .02);
+  } catch {}
+}
+const NOTALAR = [523, 587, 659, 784, 880, 1047, 1175, 1319];
+
+let seviye = 1, skor = 0, can = 3, boyut = 3, hedefler = new Set(), bulunan = new Set(), hatalar = 0, kabul = false;
+let rekor = 0;
+try { rekor = +localStorage.getItem('hafiza-matrisi-rekor') || 0; } catch {}
+$('rekor').textContent = rekor;
+
+function panel() {
+  $('seviye').textContent = seviye;
+  $('skor').textContent = skor;
+  $('canlar').textContent = '💜'.repeat(can) + '🖤'.repeat(3 - can);
+}
+
+function ayarlar(sv) {
+  const b = sv < 3 ? 3 : sv < 6 ? 4 : sv < 10 ? 5 : 6;
+  const adet = Math.min(b * b - 2, 2 + sv);
+  const goster = Math.max(700, 1300 - sv * 40);
+  return { b, adet, goster, dondur: sv >= 5 && sv % 2 === 1 };
+}
+
+function izgaraKur(b) {
+  boyut = b;
+  izgara.style.gridTemplateColumns = `repeat(${b}, 1fr)`;
+  izgara.classList.remove('basari');
+  izgara.innerHTML = '';
+  for (let i = 0; i < b * b; i++) {
+    const k = document.createElement('div');
+    k.className = 'kare';
+    k.addEventListener('pointerdown', () => sec(i));
+    izgara.appendChild(k);
+  }
+}
+
+const bekle = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function tur() {
+  const { b, adet, goster, dondur } = ayarlar(seviye);
+  izgaraKur(b);
+  hedefler = new Set(); bulunan = new Set(); hatalar = 0; kabul = false;
+  while (hedefler.size < adet) hedefler.add(Math.floor(Math.random() * b * b));
+  panel();
+  $('durum').textContent = 'Dikkat…';
+  await bekle(500);
+  hedefler.forEach((i) => izgara.children[i].classList.add('yanik'));
+  ton(NOTALAR[Math.min(seviye - 1, 7)], .2, 'triangle', .05);
+  $('durum').textContent = 'Aklında tut!';
+  await bekle(goster);
+  hedefler.forEach((i) => izgara.children[i].classList.remove('yanik'));
+  if (dondur) {
+    $('durum').textContent = 'Dönüyor! 🌀';
+    izgara.classList.add('basari');
+    await bekle(450);
+  }
+  $('durum').textContent = `${adet} kareyi bul`;
+  kabul = true;
+}
+
+function sec(i) {
+  if (!kabul || bulunan.has(i)) return;
+  const k = izgara.children[i];
+  if (hedefler.has(i)) {
+    bulunan.add(i);
+    k.classList.add('dogru');
+    ton(NOTALAR[Math.min(bulunan.size - 1, 7)], .12, 'sine', .06);
+    if (bulunan.size === hedefler.size) turBitti(true);
+  } else {
+    bulunan.add(i);
+    k.classList.add('yanlis');
+    ton(160, .25, 'sawtooth', .05, .5);
+    if (navigator.vibrate) navigator.vibrate(80);
+    hatalar++;
+    if (hatalar >= 2) turBitti(false);
+  }
+}
+
+async function turBitti(basarili) {
+  kabul = false;
+  if (basarili) {
+    skor += seviye * 10 + (hatalar === 0 ? 5 : 0);
+    $('durum').textContent = hatalar === 0 ? 'Kusursuz! ✨' : 'Geçtin!';
+    [784, 988, 1175].forEach((f, n) => setTimeout(() => ton(f, .14, 'triangle', .05), n * 90));
+    seviye++;
+  } else {
+    can--;
+    $('durum').textContent = 'Olmadı… 💔';
+    hedefler.forEach((n) => { if (!bulunan.has(n)) izgara.children[n].classList.add('kacirildi'); });
+  }
+  panel();
+  await bekle(basarili ? 900 : 1500);
+  if (can <= 0) return bitir();
+  tur();
+}
+
+function bitir() {
+  $('durum').textContent = '';
+  $('sonSeviye').textContent = seviye;
+  $('sonSkor').textContent = `Skor: ${skor}`;
+  $('yeniRekor').hidden = seviye <= rekor;
+  if (seviye > rekor) { rekor = seviye; $('rekor').textContent = rekor; try { localStorage.setItem('hafiza-matrisi-rekor', rekor); } catch {} }
+  $('bitti').hidden = false;
+}
+
+function basla() {
+  seviye = 1; skor = 0; can = 3;
+  $('giris').hidden = true; $('bitti').hidden = true;
+  tur();
+}
+
+$('basla').onclick = basla;
+$('tekrar').onclick = basla;
+izgaraKur(3);
+panel();
+</script>
+</body>
+</html>
